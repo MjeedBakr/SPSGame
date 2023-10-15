@@ -43,6 +43,18 @@ int randomNumber(int from, int to)
 	return randNum;
 }
 
+int readNumberInRange(int from, int to)
+{
+	int number;
+	do
+	{
+		cout << "\nPlease Enter a number between " << from << " and " << to << ": ";
+		cin >> number;
+	} while (number > to || number < from);
+
+	return number;
+}
+
 string printPlayerChoice(enSPS choice)
 {
 	switch (choice)
@@ -132,6 +144,8 @@ void createRound(strRoundInfo &roundInfo, strRoundsInfo& roundsInfo)
 	cout << "\nYour choice: [1]:Stone, [2]:Paper, [3]:Scissors? ";
 	short playerChoice;
 	cin >> playerChoice;
+	if (playerChoice > 3 || playerChoice < 1)
+		playerChoice = readNumberInRange(1, 3);
 
 	roundInfo.player.playerChoice = (enSPS)playerChoice;
 	roundInfo.computer.computerChoice = (enSPS)randomNumber(1, 3);
@@ -175,6 +189,10 @@ void createRounds(strRoundsInfo &roundsInfo)
 {
 	cout << "How many Rounds 1 to 10? ";
 	cin >> roundsInfo.numberOfRounds;
+	if (roundsInfo.numberOfRounds > 10 || roundsInfo.numberOfRounds < 1)
+		roundsInfo.numberOfRounds = readNumberInRange(1, 10);
+
+
 	for (int i = 0; i < roundsInfo.numberOfRounds; i++)
 	{
 		roundsInfo.roundInfo[i].roundID = to_string(i + 1);
