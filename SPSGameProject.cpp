@@ -2,10 +2,11 @@
 #include <cstdlib>
 #include <stdio.h>
 #include <string>
+#include <stdlib.h>
 using namespace std;
 
 enum enSPS {Stone = 1, Paper = 2, Scissor = 3};
-enum enSPSResults {Player1 = 1, Computer = 2, NoWinner = 3};
+enum enSPSPlayer {Player1 = 1, Computer = 2, NoWinner = 3};
 
 struct strPlayerInfo
 {
@@ -22,10 +23,18 @@ struct  strRoundInfo
 	string roundID;
 	strComputerInfo computer;
 	strPlayerInfo player;
-	enSPSResults winner;
-	string winnerName;
+	enSPSPlayer winner;
+	short drawTimes = 0;
+};
 
-
+struct strRoundsInfo
+{
+	strRoundInfo roundInfo[10];
+	short numberOfRounds;
+	short player1WinTimes = 0;
+	short ComputerWinTimes = 0;
+	short drawTimes = 0;
+	enSPSPlayer finalWinner;
 };
 
 int randomNumber(int from, int to)
@@ -34,7 +43,7 @@ int randomNumber(int from, int to)
 	return randNum;
 }
 
-string printChoice(enSPS choice)
+string printPlayerChoice(enSPS choice)
 {
 	switch (choice)
 	{
@@ -49,55 +58,74 @@ string printChoice(enSPS choice)
 	}
 }
 
-void findWinnerInfo(strRoundInfo &roundInfo)
+string printPlayerName(enSPSPlayer player)
+{
+	switch (player)
+	{
+	case Player1:
+		return "Player1";
+	case Computer:
+		return "Computer";
+	case NoWinner:
+		return "No Winner";
+	default:
+		break;
+	}
+}
+
+void increaseWinTimes(strRoundsInfo &roundsInfo, enSPSPlayer player)
+{
+	switch (player)
+	{
+	case Player1:
+		roundsInfo.player1WinTimes++;
+		break;
+	case Computer:
+		roundsInfo.ComputerWinTimes++;
+		break;
+	case NoWinner:
+		roundsInfo.drawTimes++;
+		break;
+	default:
+		break;
+	}
+}
+
+void findWinner(strRoundInfo &roundInfo, strRoundsInfo& roundsInfo)
 {
 	if (roundInfo.player.playerChoice == roundInfo.computer.computerChoice)
-		roundInfo.winner = enSPSResults::NoWinner;
+		roundInfo.winner = enSPSPlayer::NoWinner;
 	else
 	{
 		if (roundInfo.player.playerChoice == enSPS::Paper)
 		{
 			if (roundInfo.computer.computerChoice == enSPS::Stone)
-				roundInfo.winner = enSPSResults::Player1;
+				roundInfo.winner = enSPSPlayer::Player1;
 			else
-				roundInfo.winner = enSPSResults::Computer;
+				roundInfo.winner = enSPSPlayer::Computer;
 		}
 		else if (roundInfo.player.playerChoice == enSPS::Scissor)
 		{
 			if (roundInfo.computer.computerChoice == enSPS::Paper)
-				roundInfo.winner = enSPSResults::Player1;
+				roundInfo.winner = enSPSPlayer::Player1;
 			else
-				roundInfo.winner = enSPSResults::Computer;
+				roundInfo.winner = enSPSPlayer::Computer;
 		}
 		else
 		{
 			if (roundInfo.computer.computerChoice == enSPS::Scissor)
-				roundInfo.winner = enSPSResults::Player1;
+				roundInfo.winner = enSPSPlayer::Player1;
 			else
-				roundInfo.winner = enSPSResults::Computer;
+				roundInfo.winner = enSPSPlayer::Computer;
 		}
 
 	}
+	increaseWinTimes(roundsInfo, roundInfo.winner);
 
-	switch (roundInfo.winner)
-	{
-	case enSPSResults::NoWinner:
-		roundInfo.winnerName = "No Winner";
-		break;
-	case enSPSResults::Player1:
-		roundInfo.winnerName = "Player1";
-		break;
-	case enSPSResults::Computer:
-		roundInfo.winnerName = "Computer";
-		break;
-	default:
-		break;
-
-	}
 
 }
 
-void createRound(strRoundInfo &roundInfo)
+void createRound(strRoundInfo &roundInfo, strRoundsInfo& roundsInfo)
 {
 	cout << "\nRound [" << roundInfo.roundID << "] begins: \n";
 
@@ -107,53 +135,94 @@ void createRound(strRoundInfo &roundInfo)
 
 	roundInfo.player.playerChoice = (enSPS)playerChoice;
 	roundInfo.computer.computerChoice = (enSPS)randomNumber(1, 3);
-	findWinnerInfo(roundInfo);
+	findWinner(roundInfo, roundsInfo);
 
 	switch (roundInfo.winner)
 	{
-	case enSPSResults::NoWinner:
+	case enSPSPlayer::NoWinner:
 		system("color 6F");
 		break;
-	case enSPSResults::Player1:
+	case enSPSPlayer::Player1:
 		system("color 2F");
 		break;
-	case enSPSResults::Computer:
+	case enSPSPlayer::Computer:
 		cout << "\a";
 		system("color 4F");
 	}
 
 	cout << "\n\n";
 	cout << "-------------Round [" << roundInfo.roundID << "]-------------\n";
-	cout << "\nPlayer1  choice: " << printChoice(roundInfo.player.playerChoice);
-	cout << "\nComputer choice: " << printChoice(roundInfo.computer.computerChoice);
-	cout << "\nRound winner   : [" << roundInfo.winnerName << "]\n";
+	cout << "\nPlayer1  choice: " << printPlayerChoice(roundInfo.player.playerChoice);
+	cout << "\nComputer choice: " << printPlayerChoice(roundInfo.computer.computerChoice);
+	cout << "\nRound winner   : [" << printPlayerName(roundInfo.winner) << "]\n";
 
 	cout << "\n-----------------------------------\n" << endl;
 
 }
 
+void findFinalWinner(strRoundsInfo& roundsInfo)
+{
+	if (roundsInfo.ComputerWinTimes == roundsInfo.player1WinTimes)
+		roundsInfo.finalWinner = enSPSPlayer::NoWinner;
+	else
+		if (roundsInfo.player1WinTimes > roundsInfo.ComputerWinTimes)
+			roundsInfo.finalWinner = enSPSPlayer::Player1;
+		else
+			roundsInfo.finalWinner = enSPSPlayer::Computer;
+}
 
-void createRounds(strRoundInfo roundsArray[10], int& roundsArrLength)
+void createRounds(strRoundsInfo &roundsInfo)
 {
 	cout << "How many Rounds 1 to 10? ";
-	cin >> roundsArrLength;
-	for (int i = 0; i < roundsArrLength; i++)
+	cin >> roundsInfo.numberOfRounds;
+	for (int i = 0; i < roundsInfo.numberOfRounds; i++)
 	{
-		roundsArray[i].roundID = to_string(i + 1);
-		createRound(roundsArray[i]);
+		roundsInfo.roundInfo[i].roundID = to_string(i + 1);
+		createRound(roundsInfo.roundInfo[i], roundsInfo);
 	}
+	findFinalWinner(roundsInfo);
+
+}
+
+void endGame(strRoundsInfo& roundsInfo)
+{
+
+	cout << "\t\t\t\t\t-------------------------------------------\n\n";
+	cout << "\t\t\t\t\t            | G A M E O V E R |            \n\n";
+	cout << "\t\t\t\t\t-------------------------------------------\n\n";
+	cout << "\t\t\t\t\t              [ Game Results ]             \n\n";
+
+	cout << "\t\t\t\t\tGame Rounds        : " << roundsInfo.numberOfRounds << "\n";
+	cout << "\t\t\t\t\tPlayer1 won times  : " << roundsInfo.player1WinTimes << "\n";
+	cout << "\t\t\t\t\tComputer won times : " << roundsInfo.ComputerWinTimes << "\n";
+	cout << "\t\t\t\t\tDraw times         : " << roundsInfo.drawTimes << "\n";
+	cout << "\t\t\t\t\tFinal winner       : " << printPlayerName(roundsInfo.finalWinner) << "\n\n";
+
+	cout << "\t\t\t\t\t-------------------------------------------\n\n";
 
 }
 
 void startGame()
 {
-	strRoundInfo roundsArray[10];
-	int roundsArrLength = 0;
+	system("color 8F");
 
-	createRounds(roundsArray, roundsArrLength);
+	char playAgainChoice;
+	strRoundsInfo roundsInfo;
+	roundsInfo.numberOfRounds = 0;
 
+	createRounds(roundsInfo);
+	endGame(roundsInfo);
 
+	cout << "\t\t\t\t\tDo you want to play again? Y/N? ";
+	cin >> playAgainChoice;
+	if (playAgainChoice == 'y' || playAgainChoice == 'Y') {
+		system("cls");
+		startGame();
+	}
+	else
+		cout << "\nEnding the game............\n\n";
 }
+
 
 int main()
 {
